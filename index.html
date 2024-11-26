@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isaac Completion Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 20%;
+    }
+    #upload-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #0078D7;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #upload-btn:hover {
+      background-color: #005FA3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Binding of Isaac Completion Tracker</h1>
+  <input type="file" id="file-input" style="display:none;" />
+  <button id="upload-btn">Upload Save File</button>
+  <p id="status"></p>
+
+  <script>
+    const fileInput = document.getElementById("file-input");
+    const uploadBtn = document.getElementById("upload-btn");
+    const status = document.getElementById("status");
+
+    // Trigger file selection when button is clicked
+    uploadBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // Handle file selection
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        status.textContent = `File uploaded: ${file.name}`;
+      } else {
+        status.textContent = "No file selected.";
+      }
+    });
+  </script>
+</body>
+</html>
