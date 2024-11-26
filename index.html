@@ -1,136 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Isaac Completion Tracker</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 20px;
-    }
-    #upload-btn {
-      display: inline-block;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-      background-color: #0078D7;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    }
-    #upload-btn:hover {
-      background-color: #005FA3;
-    }
-    #output {
-      text-align: left;
-      margin-top: 20px;
-      font-size: 14px;
-      white-space: pre-wrap;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isaac Tracker</title>
+    <script src="isaac_tracker.js"></script>
 </head>
 <body>
-  <h1>Binding of Isaac Completion Tracker</h1>
-  <input type="file" id="file-input" style="display:none;" />
-  <button id="upload-btn">Upload Save File</button>
-  <div id="output"></div>
+    <h1>Binding of Isaac Tracker</h1>
+    <input type="file" id="file-input">
+    <button id="parse-btn">Parse Save File</button>
+    <pre id="output"></pre>
 
-  <script>
-    const fileInput = document.getElementById("file-input");
-    const uploadBtn = document.getElementById("upload-btn");
-    const outputDiv = document.getElementById("output");
+    <script>
+        const IsaacModulePromise = IsaacModule();
 
-    // Trigger file selection when button is clicked
-    uploadBtn.addEventListener("click", () => {
-      fileInput.click();
-    });
+        document.getElementById("parse-btn").addEventListener("click", async () => {
+            const fileInput = document.getElementById("file-input");
+            const output = document.getElementById("output");
 
-    // Handle file upload
-    fileInput.addEventListener("change", async (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        outputDiv.textContent = "Processing file...";
+            if (!fileInput.files.length) {
+                output.textContent = "Please select a file.";
+                return;
+            }
 
-        const arrayBuffer = await file.arrayBuffer();
-        const dataView = new DataView(arrayBuffer);
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const arrayBuffer = e.target.result;
 
-        try {
-          // Parse the file
-          const result = parseSaveFile(dataView);
+                IsaacModulePromise.then((IsaacModule) => {
+                    const heapBytes = IsaacModule._malloc(arrayBuffer.byteLength);
+                    const heap = new Uint8Array(IsaacModule.HEAPU8.buffer, heapBytes, arrayBuffer.byteLength);
+                    heap.set(new Uint8Array(arrayBuffer));
 
-          // Display the result
-          outputDiv.textContent = result;
-        } catch (error) {
-          outputDiv.textContent = `Error parsing file: ${error.message}`;
-        }
-      }
-    });
+                    const argc = 2;
+                    const argv = IsaacModule._malloc(4 * argc);
+                    IsaacModule.setValue(argv, heapBytes, "i32");
+                    IsaacModule.setValue(argv + 4, heapBytes + arrayBuffer.byteLength, "i32");
 
-    function parseSaveFile(dataView) {
-      let output = "";
+                    IsaacModule._main(argc, argv);
 
-      // Read Header
-      const magic = getString(dataView, 0, 16);
-      const crc = dataView.getInt32(16, true);
-
-      output += `Header Magic: ${magic}\n`;
-      output += `Header CRC: ${crc}\n\n`;
-
-      // Parse Chunks
-      let offset = 20; // Start after header
-      for (let chunkIndex = 0; chunkIndex < 11; chunkIndex++) {
-        const type = dataView.getInt32(offset, true);
-        const length = dataView.getInt32(offset + 4, true);
-        offset += 8;
-
-        output += `Chunk ${chunkIndex + 1}:\n`;
-        output += `  Type: ${type}\n`;
-        output += `  Length: ${length} bytes\n`;
-
-        if (type === 1) {
-          // Achievements
-          const count = dataView.getInt32(offset, true);
-          offset += 4;
-          output += `  Achievements Count: ${count}\n`;
-          for (let i = 0; i < count; i++) {
-            const completed = dataView.getUint8(offset) ? "Completed" : "Incomplete";
-            output += `    Achievement ${i + 1}: ${completed}\n`;
-            offset += 1;
-          }
-        } else if (type === 2) {
-          // Counters
-          const count = dataView.getInt32(offset, true);
-          offset += 4;
-          output += `  Counters Count: ${count}\n`;
-          for (let i = 0; i < count; i++) {
-            const counter = dataView.getInt32(offset, true);
-            output += `    Counter ${i + 1}: ${counter}\n`;
-            offset += 4;
-          }
-        } else {
-          // Unhandled chunk type - skip it
-          output += `  Unhandled chunk type.\n`;
-          offset += length;
-        }
-
-        output += "\n";
-      }
-
-      return output;
-    }
-
-    // Helper to read a string from DataView
-    function getString(dataView, offset, length) {
-      let str = "";
-      for (let i = 0; i < length; i++) {
-        const char = dataView.getUint8(offset + i);
-        if (char === 0) break; // Null-terminated string
-        str += String.fromCharCode(char);
-      }
-      return str;
-    }
-  </script>
+                    // Display the result
+                    output.textContent = "File parsed successfully!";
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    </script>
 </body>
 </html>
