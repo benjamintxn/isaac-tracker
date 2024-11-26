@@ -1,0 +1,3 @@
+/Users/bentan/isaac-tracker/build/CMakeFiles/isaac_tracker.dir
+/Users/bentan/isaac-tracker/build/CMakeFiles/edit_cache.dir
+/Users/bentan/isaac-tracker/build/CMakeFiles/rebuild_cache.dir

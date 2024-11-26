@@ -8,7 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 20%;
+      margin: 20px;
     }
     #upload-btn {
       display: inline-block;
@@ -19,9 +19,27 @@
       color: white;
       border: none;
       border-radius: 5px;
+      margin-bottom: 20px;
     }
     #upload-btn:hover {
       background-color: #005FA3;
+    }
+    #results {
+      text-align: left;
+      margin: 20px auto;
+      width: 80%;
+      max-width: 800px;
+      font-size: 14px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      margin: 5px 0;
     }
   </style>
 </head>
@@ -30,26 +48,102 @@
   <input type="file" id="file-input" style="display:none;" />
   <button id="upload-btn">Upload Save File</button>
   <p id="status"></p>
+  <div id="results"></div>
 
   <script>
     const fileInput = document.getElementById("file-input");
     const uploadBtn = document.getElementById("upload-btn");
     const status = document.getElementById("status");
+    const results = document.getElementById("results");
 
     // Trigger file selection when button is clicked
     uploadBtn.addEventListener("click", () => {
       fileInput.click();
     });
 
-    // Handle file selection
-    fileInput.addEventListener("change", (event) => {
+    // Handle file selection and process the file
+    fileInput.addEventListener("change", async (event) => {
       const file = event.target.files[0];
       if (file) {
         status.textContent = `File uploaded: ${file.name}`;
+        try {
+          const text = await file.text();
+          processSaveFile(text);
+        } catch (error) {
+          status.textContent = "Error reading file.";
+        }
       } else {
         status.textContent = "No file selected.";
       }
     });
+
+    // Simulated function to process the save file data
+    function processSaveFile(data) {
+      // Replace this section with actual parsing logic if implemented
+      const parsedData = {
+        header: {
+          magic: "ISAACNGSAVE09R",
+          crc: -219801321
+        },
+        chunks: [
+          {
+            type: 1,
+            length: 641,
+            achievements: [
+              { id: 1, status: "Incomplete" },
+              { id: 2, status: "Completed" },
+              { id: 3, status: "Completed" },
+              { id: 4, status: "Incomplete" },
+            ]
+          },
+          {
+            type: 2,
+            length: 2084,
+            counters: [
+              { id: 1, value: 0 },
+              { id: 2, value: 2 },
+              { id: 3, value: 642 },
+            ]
+          },
+        ]
+      };
+
+      displayParsedData(parsedData);
+    }
+
+    // Display the parsed save file data
+    function displayParsedData(data) {
+      results.innerHTML = `
+        <h2>Header Information</h2>
+        <p><strong>Magic:</strong> ${data.header.magic}</p>
+        <p><strong>CRC:</strong> ${data.header.crc}</p>
+        <h2>Chunks</h2>
+        <ul>
+          ${data.chunks.map(chunk => `
+            <li>
+              <h3>Chunk Type: ${chunk.type}</h3>
+              <p>Length: ${chunk.length} bytes</p>
+              ${chunk.achievements ? `
+                <h4>Achievements</h4>
+                <ul>
+                  ${chunk.achievements.map(achievement => `
+                    <li>Achievement ${achievement.id}: ${achievement.status}</li>
+                  `).join("")}
+                </ul>
+              ` : ""}
+              ${chunk.counters ? `
+                <h4>Counters</h4>
+                <ul>
+                  ${chunk.counters.map(counter => `
+                    <li>Counter ${counter.id}: ${counter.value}</li>
+                  `).join("")}
+                </ul>
+              ` : ""}
+            </li>
+          `).join("")}
+        </ul>
+      `;
+    }
   </script>
 </body>
 </html>
